@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { register as apiRegister } from '../api';
 
 const RegisterScreen = ({ navigation }: any) => {
@@ -9,65 +9,90 @@ const RegisterScreen = ({ navigation }: any) => {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleRegister = async () => {
+    setError('');
     if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+      setError('Veuillez remplir tous les champs.');
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
+      setError('Les mots de passe ne correspondent pas.');
       return;
     }
     setLoading(true);
     try {
       await apiRegister(name, email, password);
+      setError('');
       Alert.alert('Succès', 'Compte créé avec succès. Connectez-vous.');
       navigation.navigate('Login');
     } catch (err: any) {
       const apiMsg = err?.response?.data?.error || err?.response?.data?.message || err?.message || JSON.stringify(err?.response?.data) || 'Erreur lors de la création du compte.';
-      Alert.alert('Erreur', apiMsg);
-      console.log('Register error:', err?.response?.data || err);
+      setError(apiMsg);
+      // Affichage détaillé pour debug
+      console.log('Register error:', err);
+      if (err?.response) {
+        console.log('API response:', err.response);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Image source={require('../assets/2.png')} style={styles.logo} resizeMode="contain" />
-      <Text style={styles.title}>Créer un compte</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Nom"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Mot de passe"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirmer le mot de passe"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
-      <Button title={loading ? "Création..." : "S'inscrire"} onPress={handleRegister} disabled={loading} />
-      <Text style={styles.link} onPress={() => navigation?.navigate('Login')}>Déjà un compte ? Se connecter</Text>
-    </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={styles.innerContainer}>
+        <Image source={require('../assets/2.png')} style={styles.logo} resizeMode="contain" />
+        <Text style={styles.title}>Créer un compte</Text>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <TextInput
+          style={styles.input}
+          placeholder="Nom"
+          placeholderTextColor="#aaa"
+          value={name}
+          onChangeText={setName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#aaa"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Mot de passe"
+          placeholderTextColor="#aaa"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirmer le mot de passe"
+          placeholderTextColor="#aaa"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleRegister}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? "Création..." : "S'inscrire"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation?.navigate('Login')}>
+          <Text style={styles.link}>Déjà un compte ? Se connecter</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -76,32 +101,80 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#f6f8fa',
+  },
+  innerContainer: {
+    width: '90%',
+    maxWidth: 400,
     backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 28,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 24,
+    width: 90,
+    height: 90,
+    marginBottom: 18,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
+    fontSize: 26,
+    fontWeight: '700',
+    marginBottom: 18,
+    color: '#222',
+  },
+  error: {
+    color: '#d11a2a',
+    marginBottom: 12,
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   input: {
     width: '100%',
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
+    height: 48,
+    borderColor: '#e0e0e0',
+    borderWidth: 1.5,
+    borderRadius: 10,
     marginBottom: 16,
-    paddingHorizontal: 10,
+    paddingHorizontal: 14,
+    backgroundColor: '#f9f9f9',
+    fontSize: 16,
+    color: '#222',
+  },
+  button: {
+    width: '100%',
+    backgroundColor: '#007bff',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+    shadowColor: '#007bff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  buttonDisabled: {
+    backgroundColor: '#a0c8fa',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 17,
+    letterSpacing: 0.5,
   },
   link: {
     color: '#007bff',
-    marginTop: 16,
+    marginTop: 12,
     textDecorationLine: 'underline',
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
 
