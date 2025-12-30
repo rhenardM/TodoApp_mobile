@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // const API_URL = 'http://localhost:8000/api';
-const API_URL = 'http://172.20.10.2:8000/api';
+const API_URL = 'http://172.20.10.2:8000/api'; // Utilisation d'une adresse IP locale pour les tests sur un émulateur mobile
+
 
 let jwt: string | null = null;
 
